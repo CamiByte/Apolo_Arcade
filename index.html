@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Apolo: Arcade Clásico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { pixel: ['VT323', 'monospace'] },
+                    colors: {
+                        retro: {
+                            bg: '#FAFAF9', dark: '#1C1917',
+                            blue: '#3B82F6', gold: '#EAB308',
+                            green: '#22C55E', red: '#EF4444'
+                        }
+                    },
+                    boxShadow: { 'pixel': '6px 6px 0px 0px rgba(28, 25, 23, 1)' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FAFAF9;
+            color: #1C1917;
+            touch-action: none; /* Evita el scroll al jugar en móvil */
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+            border: 4px solid #1C1917;
+            background-color: #87CEEB; /* Color cielo base */
+        }
+    </style>
+</head>
+<body class="antialiased flex flex-col items-center justify-center min-h-screen p-4 selection:bg-retro-gold">
+
+    <div class="text-center mb-4">
+        <h1 class="font-pixel text-4xl md:text-6xl text-retro-dark uppercase tracking-widest drop-shadow-md">Apolo Arcade</h1>
+        <p class="font-pixel text-xl text-gray-600">¡Atrapa los discos, esquiva los zapatos!</p>
+    </div>
+
+    <div id="game-container" class="shadow-pixel bg-retro-dark p-2 md:p-4 rounded-sm">
+        <!-- El canvas del juego -->
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+    </div>
+
+    <div class="mt-6 text-center font-pixel text-lg text-gray-600 max-w-2xl hidden md:block">
+        <p><strong>Controles PC:</strong> Usa las flechas <kbd class="bg-gray-200 px-2 py-1 rounded">Izquierda</kbd> y <kbd class="bg-gray-200 px-2 py-1 rounded">Derecha</kbd> para mover a Apolo.</p>
+        <p><strong>Móvil:</strong> Toca y arrastra el dedo en la pantalla del juego.</p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Constantes del juego
+        const GAME_WIDTH = 800;
+        const GAME_HEIGHT = 600;
+        const DOG_SIZE = 130; // Tamaño ajustado para ver mejor el pixel art
+        const ITEM_SIZE = 40;
+        
+        // --- CONFIGURACIÓN DE IMÁGENES ---
+        // Nombres exactos de las imágenes que deben estar en la misma carpeta
+        const RUTA_IMAGEN_PERRO = 'image_836c6d.jpg'; 
+        const RUTA_IMAGEN_FONDO = 'image_8436e3.png'; 
+        // -------------------------------
+        
+        // Estado del juego
+        let gameState = 'START'; // START, PLAYING, GAMEOVER
+        let score = 0;
+        let lives = 3;
+        let frames = 0;
+        let items = [];
+        let difficultyMultiplier = 1;
+
+        // Cargar la imagen del perro
+        const apoloImg = new Image();
+        let isApoloLoaded = false;
+        let imageError = false;
+
+        apoloImg.onload = () => {
+            isApoloLoaded = true;
+        };
+        apoloImg.onerror = () => {
+            imageError = true;
+            console.warn("No se pudo cargar la imagen de Apolo. Mostrando emoji de respaldo.");
+        };
+        apoloImg.src = RUTA_IMAGEN_PERRO;
+
+        // Cargar la imagen del fondo
+        const bgImg = new Image();
+        let isBgLoaded = false;
+        bgImg.onload = () => {
+            isBgLoaded = true;
+        };
+        bgImg.onerror = () => {
+            console.warn("No se pudo cargar el fondo. Mostrando paisaje por defecto.");
+        }
+        bgImg.src = RUTA_IMAGEN_FONDO;
+
+        // Definición del Jugador (Apolo)
+        const player = {
+            x: GAME_WIDTH / 2 - DOG_SIZE / 2,
+            y: GAME_HEIGHT - DOG_SIZE - 20, // Posición sobre el césped
+            width: DOG_SIZE,
+            height: DOG_SIZE,
+            speed: 8,
+            stunTimer: 0,
+            emoji: '🐶'
+        };
+
+        // Tipos de objetos que caen
+        const itemTypes = [
+            { type: 'normal', emoji: '🛸', points: 10, prob: 0.7, speed: 4 },
+            { type: 'golden', emoji: '🌟', points: 50, prob: 0.1, speed: 7 },
+            { type: 'shoe',   emoji: '👞', points: -15, prob: 0.2, speed: 5 } // Penalización
+        ];
+
+        // Controles
+        const keys = {
+            ArrowLeft: false,
+            ArrowRight: false,
+            a: false,
+            d: false
+        };
+
+        // Listeners de Teclado
+        window.addEventListener('keydown', (e) => {
+            if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+            if (e.key === ' ' || e.key === 'Enter') {
+                if (gameState === 'START' || gameState === 'GAMEOVER') startGame();
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
+        });
+
+        // Listeners Táctiles / Ratón
+        function handlePointerMove(e) {
+            if (gameState !== 'PLAYING') return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            let clientX = e.clientX;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+            }
+            // Mapear posición X del cliente a la resolución interna del canvas
+            const scaleX = canvas.width / rect.width;
+            let targetX = (clientX - rect.left) * scaleX;
+            
+            // Centrar a Apolo en el dedo/ratón
+            player.x = targetX - player.width / 2;
+            
+            // Limitar bordes
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > GAME_WIDTH) player.x = GAME_WIDTH - player.width;
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (gameState === 'START' || gameState === 'GAMEOVER') startGame();
+            else handlePointerMove(e);
+        });
+        canvas.addEventListener('mousemove', (e) => {
+            if (e.buttons > 0) handlePointerMove(e); // Solo si mantiene presionado
+        });
+        canvas.addEventListener('touchstart', (e) => {
+            if (gameState === 'START' || gameState === 'GAMEOVER') startGame();
+            else handlePointerMove(e);
+        }, {passive: false});
+        canvas.addEventListener('touchmove', handlePointerMove, {passive: false});
+
+        function startGame() {
+            gameState = 'PLAYING';
+            score = 0;
+            lives = 3;
+            items = [];
+            frames = 0;
+            difficultyMultiplier = 1;
+            player.x = GAME_WIDTH / 2 - player.width / 2;
+            player.stunTimer = 0;
+        }
+
+        function spawnItem() {
+            // Aumentar dificultad
+            difficultyMultiplier = 1 + (score / 500); // 10% más rápido cada 50 puntos
+            
+            // Probabilidad de spawn (más alto = más ítems)
+            let spawnRate = Math.max(30, 80 - (score / 10)); // Empieza cada ~80 frames, baja hasta 30
+
+            if (frames % Math.floor(spawnRate) === 0) {
+                const rand = Math.random();
+                let cumulativeProb = 0;
+                let selectedType = itemTypes[0];
+
+                for (let type of itemTypes) {
+                    cumulativeProb += type.prob;
+                    if (rand <= cumulativeProb) {
+                        selectedType = type;
+                        break;
+                    }
+                }
+
+                items.push({
+                    x: Math.random() * (GAME_WIDTH - ITEM_SIZE),
+                    y: -ITEM_SIZE,
+                    width: ITEM_SIZE,
+                    height: ITEM_SIZE,
+                    type: selectedType.type,
+                    emoji: selectedType.emoji,
+                    points: selectedType.points,
+                    speed: selectedType.speed * difficultyMultiplier
+                });
+            }
+        }
+
+        function checkCollision(rect1, rect2) {
+            // Hitbox un poco más pequeña que el tamaño visual para ser más permisivos
+            const margin = 10;
+            return (
+                rect1.x + margin < rect2.x + rect2.width - margin &&
+                rect1.x + rect1.width - margin > rect2.x + margin &&
+                rect1.y + margin < rect2.y + rect2.height - margin &&
+                rect1.y + rect1.height - margin > rect2.y + margin
+            );
+        }
+
+        function update() {
+            if (gameState !== 'PLAYING') return;
+            frames++;
+
+            // Manejo de Apolo (Aturdimiento y Movimiento Teclado)
+            if (player.stunTimer > 0) {
+                player.stunTimer--;
+            } else {
+                if (keys.ArrowLeft || keys.a) player.x -= player.speed;
+                if (keys.ArrowRight || keys.d) player.x += player.speed;
+            }
+
+            // Limitar a los bordes
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > GAME_WIDTH) player.x = GAME_WIDTH - player.width;
+
+            spawnItem();
+
+            // Actualizar ítems
+            for (let i = items.length - 1; i >= 0; i--) {
+                let item = items[i];
+                item.y += item.speed;
+
+                // Colisión con Apolo
+                if (checkCollision(player, item)) {
+                    if (item.type === 'shoe') {
+                        player.stunTimer = 60; // Aturdido 1 segundo (a 60fps)
+                        score += item.points; // Resta puntos
+                    } else {
+                        score += item.points;
+                    }
+                    items.splice(i, 1);
+                    continue;
+                }
+
+                // Si el ítem cae al suelo
+                if (item.y > GAME_HEIGHT) {
+                    // Si era un disco (no un zapato), pierdes una vida
+                    if (item.type !== 'shoe') {
+                        lives--;
+                        if (lives <= 0) {
+                            gameState = 'GAMEOVER';
+                        }
+                    }
+                    items.splice(i, 1);
+                }
+            }
+        }
+
+        function drawEnvironment() {
+            if (isBgLoaded) {
+                // Dibujar el paisaje de fondo si cargó correctamente
+                ctx.drawImage(bgImg, 0, 0, GAME_WIDTH, GAME_HEIGHT);
+            } else {
+                // Cielo original como respaldo
+                ctx.fillStyle = '#87CEEB';
+                ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+                // Sol retro
+                ctx.fillStyle = '#EAB308';
+                ctx.fillRect(GAME_WIDTH - 120, 40, 80, 80);
+
+                // Nubes simples rectangulares
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.fillRect(100, 80, 120, 30);
+                ctx.fillRect(130, 60, 60, 20);
+                
+                ctx.fillRect(500, 120, 150, 40);
+                ctx.fillRect(530, 90, 80, 30);
+
+                // Césped (Fondo)
+                ctx.fillStyle = '#4ADE80';
+                ctx.fillRect(0, GAME_HEIGHT - 60, GAME_WIDTH, 60);
+                // Césped (Detalles oscuros)
+                ctx.fillStyle = '#22C55E';
+                ctx.fillRect(0, GAME_HEIGHT - 30, GAME_WIDTH, 30);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawEnvironment();
+
+            // Configuración general de texto para Emojis
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            if (gameState === 'PLAYING') {
+                // Flash rojo si está aturdido
+                if (player.stunTimer > 0 && Math.floor(frames / 5) % 2 === 0) {
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
+                    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+                }
+
+                // Dibujar Items
+                ctx.font = `${ITEM_SIZE}px sans-serif`;
+                items.forEach(item => {
+                    ctx.fillText(item.emoji, item.x + item.width/2, item.y + item.height/2);
+                });
+
+                // Dibujar Jugador
+                if (isApoloLoaded) {
+                    // Usamos multiply para que el fondo blanco de tu JPG se vuelva transparente
+                    ctx.globalCompositeOperation = 'multiply';
+                    ctx.drawImage(apoloImg, player.x, player.y, player.width, player.height);
+                    ctx.globalCompositeOperation = 'source-over'; // Devolver a normal
+                    
+                    if (player.stunTimer > 0) {
+                        ctx.font = '40px sans-serif';
+                        ctx.fillText('😵', player.x + player.width/2, player.y - 10);
+                    }
+                } else {
+                    // Si no, se dibuja el emoji como respaldo
+                    ctx.font = `${DOG_SIZE * 0.8}px sans-serif`;
+                    if (player.stunTimer > 0) {
+                        // Cara mareada si está aturdido
+                        ctx.fillText('😵', player.x + player.width/2, player.y + player.height/2);
+                    } else {
+                        ctx.fillText(player.emoji, player.x + player.width/2, player.y + player.height/2);
+                    }
+                }
+
+                // Dibujar UI (Puntuación y Vidas)
+                ctx.font = '30px "VT323"';
+                ctx.fillStyle = '#1C1917';
+                ctx.textAlign = 'left';
+                ctx.fillText(`PUNTOS: ${score}`, 20, 40);
+
+                ctx.textAlign = 'right';
+                let vidasStr = '🦴'.repeat(Math.max(0, lives));
+                ctx.fillText(`VIDAS: ${vidasStr}`, GAME_WIDTH - 20, 40);
+
+            } else if (gameState === 'START') {
+                // Pantalla de Inicio
+                ctx.fillStyle = 'rgba(28, 25, 23, 0.8)';
+                ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#EAB308';
+                ctx.font = '60px "VT323"';
+                ctx.fillText('APOLO ARCADE', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50);
+
+                ctx.fillStyle = '#FAFAF9';
+                ctx.font = '30px "VT323"';
+                // Efecto parpadeo
+                if (Math.floor(Date.now() / 500) % 2 === 0) {
+                    ctx.fillText('TOCA O PRESIONA ESPACIO PARA JUGAR', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30);
+                }
+                
+                ctx.font = '24px "VT323"';
+                ctx.fillStyle = '#9CA3AF';
+                ctx.fillText('Atrapa: 🛸 (+10)  🌟 (+50)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 100);
+                ctx.fillText('Esquiva: 👞 (Aturde y -15 pts)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 140);
+                ctx.fillText('Pierdes una 🦴 si un disco toca el suelo', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 180);
+
+            } else if (gameState === 'GAMEOVER') {
+                // Pantalla de Game Over
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.9)'; // Fondo rojizo
+                ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#FAFAF9';
+                ctx.font = '70px "VT323"';
+                ctx.fillText('¡JUEGO TERMINADO!', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40);
+
+                ctx.fillStyle = '#EAB308';
+                ctx.font = '40px "VT323"';
+                ctx.fillText(`PUNTUACIÓN FINAL: ${score}`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 20);
+
+                ctx.fillStyle = '#FAFAF9';
+                ctx.font = '30px "VT323"';
+                if (Math.floor(Date.now() / 500) % 2 === 0) {
+                    ctx.fillText('TOCA O PRESIONA ESPACIO PARA REINTENTAR', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 90);
+                }
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Iniciar bucle
+        gameLoop();
+
+    </script>
+</body>
+</html>
