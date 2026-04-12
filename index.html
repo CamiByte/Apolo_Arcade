@@ -341,10 +341,8 @@
 
                 // Dibujar Jugador
                 if (isApoloLoaded) {
-                    // Usamos multiply para que el fondo blanco de tu JPG se vuelva transparente
-                    ctx.globalCompositeOperation = 'multiply';
+                    // Se quitó el efecto 'multiply' para que Apolo no se vea transparente
                     ctx.drawImage(apoloImg, player.x, player.y, player.width, player.height);
-                    ctx.globalCompositeOperation = 'source-over'; // Devolver a normal
                     
                     if (player.stunTimer > 0) {
                         ctx.font = '40px sans-serif';
