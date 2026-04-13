@@ -26,31 +26,28 @@
     </script>
     <style>
         body {
-            /* Fondo de la sala arcade */
             background-color: #111827; 
             background-image: radial-gradient(circle at center, #1f2937 0%, #030712 100%);
             color: #FAFAF9;
-            touch-action: none; /* Evita el scroll al jugar en móvil */
+            touch-action: none;
             overflow-x: hidden;
         }
         
-        /* Contenedor del Mueble Arcade */
         .arcade-cabinet {
-            background-color: #d62828; /* Rojo clásico */
+            background-color: #d62828;
             box-shadow: 
                 inset -10px -10px 30px rgba(0,0,0,0.4),
                 inset 10px 10px 30px rgba(255,255,255,0.1),
                 0 25px 50px -12px rgba(0, 0, 0, 0.8);
         }
 
-        /* Pantalla CRT (Bisel) */
         #game-container {
             position: relative;
             width: 100%;
-            max-width: 1024px; /* Pantalla más grande (antes 800px) */
+            max-width: 1024px;
             margin: 0 auto;
-            background-color: #1C1917; /* Bisel oscuro */
-            box-shadow: inset 0 0 40px rgba(0,0,0,1); /* Sombra interna para dar profundidad */
+            background-color: #1C1917;
+            box-shadow: inset 0 0 40px rgba(0,0,0,1);
         }
 
         canvas {
@@ -58,11 +55,10 @@
             width: 100%;
             height: auto;
             image-rendering: pixelated;
-            background-color: #87CEEB; /* Color cielo base */
-            border-radius: 12px; /* Ligeramente curvo como CRT */
+            background-color: #87CEEB;
+            border-radius: 12px;
         }
         
-        /* Reflejo del cristal */
         .glass-glare {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -71,15 +67,24 @@
             pointer-events: none;
             z-index: 10;
         }
+
+        /* Estilo para el botón de compartir que flota sobre el canvas */
+        #share-btn {
+            display: none;
+            position: absolute;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+        }
     </style>
 </head>
 <body class="antialiased flex flex-col items-center justify-start md:justify-center min-h-screen p-0 md:p-8 selection:bg-retro-gold">
 
     <!-- Máquina Arcade -->
-    <!-- Se ajustaron los bordes y paddings para móviles: p-2 en vez de p-4, bordes 0 en móvil -->
     <div class="arcade-cabinet w-full max-w-6xl md:rounded-t-[3rem] md:rounded-b-xl border-0 md:border-8 border-red-900 p-2 md:p-8 flex flex-col items-center mt-0 relative min-h-screen md:min-h-0">
         
-        <!-- Marquesina Iluminada (Letrero Superior) -->
+        <!-- Marquesina Iluminada -->
         <div class="w-full bg-black border-2 md:border-4 border-gray-800 p-2 md:p-4 mb-2 md:mb-8 rounded-lg shadow-[0_0_20px_rgba(250,204,21,0.5)] text-center relative overflow-hidden flex flex-col items-center justify-center">
             <div class="absolute inset-0 bg-yellow-400 opacity-10 animate-pulse"></div>
             <h1 class="font-pixel text-2xl md:text-6xl text-yellow-400 uppercase tracking-widest drop-shadow-[0_0_10px_rgba(250,204,21,0.8)] relative z-10 m-0 leading-none" style="text-shadow: 2px 2px 0px #1C1917;">
@@ -90,21 +95,24 @@
 
         <!-- Pantalla de la Máquina -->
         <div id="game-container" class="p-2 md:p-8 rounded-xl md:rounded-[2rem] border-b-4 md:border-b-8 border-r-4 md:border-r-8 border-l-2 md:border-l-4 border-t-2 md:border-t-4 border-gray-900 relative flex-grow md:flex-grow-0 flex items-center justify-center">
-            <div class="glass-glare mx-2 md:mx-8 mt-2 md:mt-8"></div> <!-- Ajuste para no cubrir el borde del div -->
+            <div class="glass-glare mx-2 md:mx-8 mt-2 md:mt-8"></div>
+            
+            <!-- Botón de compartir en Instagram (Aparece en Game Over) -->
+            <button id="share-btn" onclick="shareToInstagram()" class="font-pixel bg-pink-600 hover:bg-pink-500 text-white px-6 py-3 rounded-full border-b-4 border-pink-900 shadow-lg transform active:translate-y-1 transition-all text-xl md:text-3xl uppercase tracking-wider">
+                📸 Compartir en Instagram
+            </button>
+
             <!-- El canvas del juego -->
             <canvas id="gameCanvas" width="800" height="600" class="border-2 md:border-4 border-black relative z-0"></canvas>
         </div>
 
-        <!-- Panel de Control (Botones e Instrucciones) -->
+        <!-- Panel de Control -->
         <div class="w-full mt-2 md:mt-8 bg-red-800 border-t-2 md:border-t-4 border-l-2 border-r-2 border-red-950 p-2 md:p-6 rounded-b-xl flex flex-col md:flex-row justify-between items-center shadow-[inset_0_10px_20px_rgba(0,0,0,0.5)] z-20">
-            
-            <!-- Instrucciones -->
             <div class="text-left font-pixel text-yellow-100 text-xs md:text-xl space-y-1 md:space-y-2 mb-2 md:mb-0 w-full md:w-auto text-center md:text-left">
                 <p>🕹️ <strong>PC:</strong> Usa <kbd class="bg-gray-800 text-white px-1 py-0.5 md:px-2 md:py-1 rounded border-b-2 md:border-b-4 border-gray-950">Izq</kbd> / <kbd class="bg-gray-800 text-white px-1 py-0.5 md:px-2 md:py-1 rounded border-b-2 md:border-b-4 border-gray-950">Der</kbd></p>
                 <p class="mt-1 md:mt-2">👆 <strong>Móvil:</strong> Toca la pantalla y arrastra</p>
             </div>
 
-            <!-- Botones Arcade (Decorativos) -->
             <div class="flex gap-2 md:gap-6 justify-center">
                 <div class="w-8 h-8 md:w-16 md:h-16 bg-blue-500 rounded-full border-b-2 md:border-b-4 border-blue-800 shadow-[0_5px_10px_rgba(0,0,0,0.5)] active:border-b-0 active:translate-y-1 transition-all cursor-pointer"></div>
                 <div class="w-8 h-8 md:w-16 md:h-16 bg-yellow-400 rounded-full border-b-2 md:border-b-4 border-yellow-700 shadow-[0_5px_10px_rgba(0,0,0,0.5)] active:border-b-0 active:translate-y-1 transition-all cursor-pointer"></div>
@@ -112,7 +120,6 @@
             </div>
         </div>
         
-        <!-- Ranuras de Monedas (Coin Slots) -->
         <div class="flex gap-8 md:gap-16 mt-4 md:mt-8 pb-2 md:pb-4 justify-center">
             <div class="w-10 h-14 md:w-14 md:h-20 bg-gray-800 border-2 md:border-4 border-gray-600 rounded flex flex-col items-center p-1 shadow-inner relative">
                 <div class="w-1 h-6 md:w-2 md:h-10 bg-black rounded-full mb-1 md:mb-2 border border-gray-700"></div>
@@ -125,112 +132,87 @@
                 <div class="absolute -bottom-6 md:-bottom-8 text-xs md:text-sm font-pixel text-yellow-300 opacity-50">25¢</div>
             </div>
         </div>
+    </div>
 
+    <!-- Contenedor para mensajes tipo modal (reemplazo de alert) -->
+    <div id="message-box" class="fixed inset-0 bg-black bg-opacity-80 z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 border-4 border-retro-cyan p-6 rounded-xl max-w-sm w-full text-center">
+            <p id="message-text" class="font-pixel text-xl md:text-2xl text-white mb-6"></p>
+            <button onclick="closeMessageBox()" class="font-pixel bg-retro-blue text-white px-6 py-2 rounded-lg border-b-4 border-blue-900 active:border-b-0 uppercase">Entendido</button>
+        </div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const shareBtn = document.getElementById('share-btn');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
 
-        // Constantes del juego
         const GAME_WIDTH = 800;
         const GAME_HEIGHT = 600;
-        const DOG_SIZE = 200; // Tamaño aumentado para que el perro sea más grande
-        const ITEM_SIZE = 70; // Tamaño de los iconos aumentado (antes 40)
+        const DOG_SIZE = 200; 
+        const ITEM_SIZE = 70; 
         
-        // --- CONFIGURACIÓN DE IMÁGENES ---
-        // Nombres exactos de las imágenes que deben estar en la misma carpeta
         const RUTA_IMAGEN_PERRO = 'image_836c6d.jpg'; 
         const RUTA_IMAGEN_FONDO = 'image_8436e3.png'; 
-        // -------------------------------
         
-        // Estado del juego
-        let gameState = 'START'; // START, PLAYING, GAMEOVER
+        let gameState = 'START'; 
         let score = 0;
         let lives = 3;
         let frames = 0;
         let items = [];
         let difficultyMultiplier = 1;
+        const BASE_PLAYER_SPEED = 8;
 
-        // Cargar la imagen del perro
         const apoloImg = new Image();
         let isApoloLoaded = false;
-        let imageError = false;
-
-        apoloImg.onload = () => {
-            isApoloLoaded = true;
-        };
-        apoloImg.onerror = () => {
-            imageError = true;
-            console.warn("No se pudo cargar la imagen de Apolo. Mostrando emoji de respaldo.");
-        };
+        apoloImg.onload = () => { isApoloLoaded = true; };
         apoloImg.src = RUTA_IMAGEN_PERRO;
 
-        // Cargar la imagen del fondo
         const bgImg = new Image();
         let isBgLoaded = false;
-        bgImg.onload = () => {
-            isBgLoaded = true;
-        };
-        bgImg.onerror = () => {
-            console.warn("No se pudo cargar el fondo. Mostrando paisaje por defecto.");
-        }
+        bgImg.onload = () => { isBgLoaded = true; };
         bgImg.src = RUTA_IMAGEN_FONDO;
 
-        // Definición del Jugador (Apolo)
         const player = {
             x: GAME_WIDTH / 2 - DOG_SIZE / 2,
-            y: GAME_HEIGHT - DOG_SIZE - 20, // Posición sobre el césped
+            y: GAME_HEIGHT - DOG_SIZE - 20,
             width: DOG_SIZE,
             height: DOG_SIZE,
-            speed: 8,
+            speed: BASE_PLAYER_SPEED,
             stunTimer: 0,
             emoji: '🐶'
         };
 
-        // Tipos de objetos que caen
         const itemTypes = [
-            { type: 'normal', emoji: '🥏', points: 10, prob: 0.7, speed: 4 },
-            { type: 'golden', emoji: '🌟', points: 50, prob: 0.1, speed: 7 },
-            { type: 'bee',   emoji: '🐝', points: -15, prob: 0.2, speed: 5 } // Penalización
+            { type: 'normal', emoji: '🥏', points: 10, prob: 0.45, speed: 4 },
+            { type: 'chicken', emoji: '🍗', points: 20, prob: 0.15, speed: 5 },
+            { type: 'meat',   emoji: '🍖', points: 30, prob: 0.1, speed: 6 },
+            { type: 'bone',   emoji: '🦴', points: 100, prob: 0.05, speed: 8, addsLife: true }, 
+            { type: 'bee',    emoji: '🐝', points: -15, prob: 0.15, speed: 5 },
+            { type: 'fly',    emoji: '🪰', points: -10, prob: 0.1, speed: 6 }
         ];
 
-        // Controles
-        const keys = {
-            ArrowLeft: false,
-            ArrowRight: false,
-            a: false,
-            d: false
-        };
+        const keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false };
 
-        // Listeners de Teclado
         window.addEventListener('keydown', (e) => {
             if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
             if (e.key === ' ' || e.key === 'Enter') {
                 if (gameState === 'START' || gameState === 'GAMEOVER') startGame();
             }
         });
-        window.addEventListener('keyup', (e) => {
-            if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
-        });
+        window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
 
-        // Listeners Táctiles / Ratón
         function handlePointerMove(e) {
             if (gameState !== 'PLAYING') return;
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
             let clientX = e.clientX;
-            if (e.touches && e.touches.length > 0) {
-                clientX = e.touches[0].clientX;
-            }
-            // Mapear posición X del cliente a la resolución interna del canvas
+            if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; }
             const scaleX = canvas.width / rect.width;
             let targetX = (clientX - rect.left) * scaleX;
-            
-            // Centrar a Apolo en el dedo/ratón
             player.x = targetX - player.width / 2;
-            
-            // Limitar bordes
             if (player.x < 0) player.x = 0;
             if (player.x + player.width > GAME_WIDTH) player.x = GAME_WIDTH - player.width;
         }
@@ -239,9 +221,7 @@
             if (gameState === 'START' || gameState === 'GAMEOVER') startGame();
             else handlePointerMove(e);
         });
-        canvas.addEventListener('mousemove', (e) => {
-            if (e.buttons > 0) handlePointerMove(e); // Solo si mantiene presionado
-        });
+        canvas.addEventListener('mousemove', (e) => { if (e.buttons > 0) handlePointerMove(e); });
         canvas.addEventListener('touchstart', (e) => {
             if (gameState === 'START' || gameState === 'GAMEOVER') startGame();
             else handlePointerMove(e);
@@ -257,14 +237,84 @@
             difficultyMultiplier = 1;
             player.x = GAME_WIDTH / 2 - player.width / 2;
             player.stunTimer = 0;
+            player.speed = BASE_PLAYER_SPEED;
+            shareBtn.style.display = 'none'; // Ocultar botón de compartir al empezar
+        }
+
+        function showMessage(text) {
+            messageText.innerText = text;
+            messageBox.classList.remove('hidden');
+        }
+
+        function closeMessageBox() {
+            messageBox.classList.add('hidden');
+        }
+
+        // Función para compartir en Instagram (Web Share API)
+        async function shareToInstagram() {
+            try {
+                // Crear un canvas temporal para el pantallazo (sin la UI de Game Over encima)
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = GAME_WIDTH;
+                tempCanvas.height = GAME_HEIGHT;
+                const tCtx = tempCanvas.getContext('2d');
+
+                // 1. Dibujar el fondo y elementos actuales (simulando captura)
+                drawEnvironmentTo(tCtx);
+                
+                // 2. Dibujar a Apolo
+                if (isApoloLoaded) {
+                    tCtx.drawImage(apoloImg, player.x, player.y, player.width, player.height);
+                } else {
+                    tCtx.font = `${DOG_SIZE * 0.8}px sans-serif`;
+                    tCtx.textAlign = 'center';
+                    tCtx.fillText('🐶', player.x + player.width/2, player.y + player.height/2);
+                }
+
+                // 3. Añadir marca de agua y puntuación
+                tCtx.fillStyle = 'rgba(0,0,0,0.6)';
+                tCtx.fillRect(0, 0, GAME_WIDTH, 100);
+                
+                tCtx.fillStyle = '#EAB308';
+                tCtx.font = '40px "VT323"';
+                tCtx.textAlign = 'center';
+                tCtx.fillText(`¡APOLO ARCADE: ${score} PUNTOS!`, GAME_WIDTH/2, 45);
+                
+                tCtx.fillStyle = '#FFFFFF';
+                tCtx.font = '30px "VT323"';
+                tCtx.fillText('Sigue a @apolo.chilote 👾', GAME_WIDTH/2, 80);
+
+                // 4. Convertir a Blob/Imagen
+                tempCanvas.toBlob(async (blob) => {
+                    if (!blob) return;
+                    const file = new File([blob], "apolo_score.png", { type: "image/png" });
+                    
+                    if (navigator.share) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Apolo Disc Dog Arcade',
+                            text: `¡Mira mi récord de ${score} puntos en Apolo Arcade! Sígueme en @apolo.chilote`
+                        });
+                    } else {
+                        // Fallback si no hay Share API (descargar imagen)
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'mi_record_apolo.png';
+                        a.click();
+                        showMessage("¡Tu récord se ha descargado! Súbelo manualmente a Instagram Stories y etiqueta a @apolo.chilote");
+                    }
+                });
+            } catch (err) {
+                console.error(err);
+                showMessage("Ups, no se pudo abrir el menú para compartir. Prueba descargando la imagen.");
+            }
         }
 
         function spawnItem() {
-            // Aumentar dificultad
-            difficultyMultiplier = 1 + (score / 500); // 10% más rápido cada 50 puntos
-            
-            // Probabilidad de spawn (más alto = más ítems)
-            let spawnRate = Math.max(30, 80 - (score / 10)); // Empieza cada ~80 frames, baja hasta 30
+            difficultyMultiplier = 1 + (score / 800) + (frames / 4000); 
+            let spawnRate = Math.max(18, 85 - (score / 12) - (frames / 300)); 
+            player.speed = BASE_PLAYER_SPEED + (difficultyMultiplier - 1) * 2;
 
             if (frames % Math.floor(spawnRate) === 0) {
                 const rand = Math.random();
@@ -287,14 +337,14 @@
                     type: selectedType.type,
                     emoji: selectedType.emoji,
                     points: selectedType.points,
-                    speed: selectedType.speed * difficultyMultiplier
+                    speed: selectedType.speed * difficultyMultiplier,
+                    addsLife: selectedType.addsLife || false
                 });
             }
         }
 
         function checkCollision(rect1, rect2) {
-            // Hitbox un poco más pequeña que el tamaño visual para ser más permisivos
-            const margin = 10;
+            const margin = 15;
             return (
                 rect1.x + margin < rect2.x + rect2.width - margin &&
                 rect1.x + rect1.width - margin > rect2.x + margin &&
@@ -307,7 +357,6 @@
             if (gameState !== 'PLAYING') return;
             frames++;
 
-            // Manejo de Apolo (Aturdimiento y Movimiento Teclado)
             if (player.stunTimer > 0) {
                 player.stunTimer--;
             } else {
@@ -315,170 +364,132 @@
                 if (keys.ArrowRight || keys.d) player.x += player.speed;
             }
 
-            // Limitar a los bordes
             if (player.x < 0) player.x = 0;
             if (player.x + player.width > GAME_WIDTH) player.x = GAME_WIDTH - player.width;
 
             spawnItem();
 
-            // Actualizar ítems
             for (let i = items.length - 1; i >= 0; i--) {
                 let item = items[i];
                 item.y += item.speed;
 
-                // Colisión con Apolo
                 if (checkCollision(player, item)) {
-                    if (item.type === 'bee') {
-                        player.stunTimer = 60; // Aturdido 1 segundo (a 60fps)
-                        score += item.points; // Resta puntos
-                        lives--; // NUEVO: Pierde una vida
-                        if (lives <= 0) {
-                            gameState = 'GAMEOVER';
-                        }
+                    if (item.type === 'bee' || item.type === 'fly') {
+                        player.stunTimer = 60;
+                        score += item.points; 
+                        lives--; 
+                        if (lives <= 0) endGame();
                     } else {
                         score += item.points;
+                        if (item.addsLife) {
+                            lives++;
+                            if (lives > 5) lives = 5; 
+                        }
                     }
                     items.splice(i, 1);
                     continue;
                 }
 
-                // Si el ítem cae al suelo
                 if (item.y > GAME_HEIGHT) {
-                    // Si era un disco (no una abeja), pierdes una vida
-                    if (item.type !== 'bee') {
+                    if (item.type === 'normal') {
                         lives--;
-                        if (lives <= 0) {
-                            gameState = 'GAMEOVER';
-                        }
+                        if (lives <= 0) endGame();
                     }
                     items.splice(i, 1);
                 }
             }
         }
 
-        function drawEnvironment() {
+        function endGame() {
+            gameState = 'GAMEOVER';
+            shareBtn.style.display = 'block'; // Mostrar botón de compartir al morir
+        }
+
+        // Función para dibujar el entorno en cualquier contexto de canvas
+        function drawEnvironmentTo(targetCtx) {
             if (isBgLoaded) {
-                // Dibujar el paisaje de fondo si cargó correctamente
-                ctx.drawImage(bgImg, 0, 0, GAME_WIDTH, GAME_HEIGHT);
+                targetCtx.drawImage(bgImg, 0, 0, GAME_WIDTH, GAME_HEIGHT);
             } else {
-                // Cielo original como respaldo
-                ctx.fillStyle = '#87CEEB';
-                ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
-                // Sol retro
-                ctx.fillStyle = '#EAB308';
-                ctx.fillRect(GAME_WIDTH - 120, 40, 80, 80);
-
-                // Nubes simples rectangulares
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                ctx.fillRect(100, 80, 120, 30);
-                ctx.fillRect(130, 60, 60, 20);
-                
-                ctx.fillRect(500, 120, 150, 40);
-                ctx.fillRect(530, 90, 80, 30);
-
-                // Césped (Fondo)
-                ctx.fillStyle = '#4ADE80';
-                ctx.fillRect(0, GAME_HEIGHT - 60, GAME_WIDTH, 60);
-                // Césped (Detalles oscuros)
-                ctx.fillStyle = '#22C55E';
-                ctx.fillRect(0, GAME_HEIGHT - 30, GAME_WIDTH, 30);
+                targetCtx.fillStyle = '#87CEEB';
+                targetCtx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+                targetCtx.fillStyle = '#EAB308';
+                targetCtx.fillRect(GAME_WIDTH - 120, 40, 80, 80);
+                targetCtx.fillStyle = '#4ADE80';
+                targetCtx.fillRect(0, GAME_HEIGHT - 60, GAME_WIDTH, 60);
             }
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            drawEnvironment();
-
-            // Configuración general de texto para Emojis
+            drawEnvironmentTo(ctx);
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
             if (gameState === 'PLAYING') {
-                // Flash rojo si está aturdido
                 if (player.stunTimer > 0 && Math.floor(frames / 5) % 2 === 0) {
                     ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
                     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
                 }
 
-                // Dibujar Items
                 ctx.font = `${ITEM_SIZE}px sans-serif`;
                 items.forEach(item => {
                     ctx.fillText(item.emoji, item.x + item.width/2, item.y + item.height/2);
                 });
 
-                // Dibujar Jugador
                 if (isApoloLoaded) {
-                    // Se quitó el efecto 'multiply' para que Apolo no se vea transparente
                     ctx.drawImage(apoloImg, player.x, player.y, player.width, player.height);
-                    
                     if (player.stunTimer > 0) {
                         ctx.font = '40px sans-serif';
                         ctx.fillText('😵', player.x + player.width/2, player.y - 10);
                     }
                 } else {
-                    // Si no, se dibuja el emoji como respaldo
                     ctx.font = `${DOG_SIZE * 0.8}px sans-serif`;
-                    if (player.stunTimer > 0) {
-                        // Cara mareada si está aturdido
-                        ctx.fillText('😵', player.x + player.width/2, player.y + player.height/2);
-                    } else {
-                        ctx.fillText(player.emoji, player.x + player.width/2, player.y + player.height/2);
-                    }
+                    ctx.fillText(player.stunTimer > 0 ? '😵' : player.emoji, player.x + player.width/2, player.y + player.height/2);
                 }
 
-                // Dibujar UI (Puntuación y Vidas)
                 ctx.font = '30px "VT323"';
                 ctx.fillStyle = '#1C1917';
                 ctx.textAlign = 'left';
                 ctx.fillText(`PUNTOS: ${score}`, 20, 40);
-
                 ctx.textAlign = 'right';
-                let vidasStr = '🦴'.repeat(Math.max(0, lives));
-                ctx.fillText(`VIDAS: ${vidasStr}`, GAME_WIDTH - 20, 40);
+                ctx.fillText(`VIDAS: ${'🦴'.repeat(Math.max(0, lives))}`, GAME_WIDTH - 20, 40);
 
             } else if (gameState === 'START') {
-                // Pantalla de Inicio
-                ctx.fillStyle = 'rgba(28, 25, 23, 0.8)';
+                ctx.fillStyle = 'rgba(28, 25, 23, 0.85)';
                 ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#EAB308';
                 ctx.font = '60px "VT323"';
-                ctx.fillText('APOLO DISC DOG ARCADE 👾', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50);
-
+                ctx.fillText('APOLO DISC DOG ARCADE 👾', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 80);
                 ctx.fillStyle = '#FAFAF9';
                 ctx.font = '30px "VT323"';
-                // Efecto parpadeo
                 if (Math.floor(Date.now() / 500) % 2 === 0) {
-                    ctx.fillText('TOCA LA PANTALLA O PRESIONA ESPACIO', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30);
+                    ctx.fillText('TOCA LA PANTALLA O PRESIONA ESPACIO', GAME_WIDTH / 2, GAME_HEIGHT / 2);
                 }
-                
                 ctx.font = '24px "VT323"';
                 ctx.fillStyle = '#9CA3AF';
-                ctx.fillText('Atrapa: 🥏 (+10)  🌟 (+50)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 100);
-                ctx.fillText('Esquiva: 🐝 (Pierdes 1 🦴 y -15 pts)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 140);
-                ctx.fillText('Pierdes una 🦴 si un disco toca el suelo', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 180);
+                ctx.fillText('Atrapa: 🥏 (+10) 🍗 (+20) 🍖 (+30)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 70);
+                ctx.fillStyle = '#FFD700';
+                ctx.fillText('¡RARO! 🦴 (+100 y +1 Vida)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 105);
+                ctx.fillStyle = '#F87171';
+                ctx.fillText('Esquiva: 🐝 🪰 (Pierdes 1 🦴 y puntos)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 140);
+                ctx.fillStyle = '#FAFAF9';
+                ctx.fillText('¡CUIDADO! El juego se acelera con el tiempo ⚡', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 175);
 
             } else if (gameState === 'GAMEOVER') {
-                // Pantalla de Game Over
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.9)'; // Fondo rojizo
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
                 ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#FAFAF9';
                 ctx.font = '70px "VT323"';
-                ctx.fillText('¡JUEGO TERMINADO!', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40);
-
+                ctx.fillText('¡SISTEMA CAÍDO!', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 80);
                 ctx.fillStyle = '#EAB308';
                 ctx.font = '40px "VT323"';
-                ctx.fillText(`PUNTUACIÓN FINAL: ${score}`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 20);
-
+                ctx.fillText(`PUNTUACIÓN FINAL: ${score}`, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 10);
                 ctx.fillStyle = '#FAFAF9';
                 ctx.font = '30px "VT323"';
                 if (Math.floor(Date.now() / 500) % 2 === 0) {
-                    ctx.fillText('TOCA O PRESIONA ESPACIO PARA REINTENTAR', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 90);
+                    ctx.fillText('TOCA PARA REINICIAR', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 140);
                 }
             }
         }
@@ -489,9 +500,7 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Iniciar bucle
         gameLoop();
-
     </script>
 </body>
 </html>
