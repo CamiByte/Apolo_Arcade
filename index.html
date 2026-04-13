@@ -68,7 +68,6 @@
             z-index: 10;
         }
 
-        /* Estilo para el botón de compartir que flota sobre el canvas */
         #share-btn {
             display: none;
             position: absolute;
@@ -97,9 +96,9 @@
         <div id="game-container" class="p-2 md:p-8 rounded-xl md:rounded-[2rem] border-b-4 md:border-b-8 border-r-4 md:border-r-8 border-l-2 md:border-l-4 border-t-2 md:border-t-4 border-gray-900 relative flex-grow md:flex-grow-0 flex items-center justify-center">
             <div class="glass-glare mx-2 md:mx-8 mt-2 md:mt-8"></div>
             
-            <!-- Botón de compartir en Instagram (Aparece en Game Over) -->
+            <!-- Botón de compartir en Instagram -->
             <button id="share-btn" onclick="shareToInstagram()" class="font-pixel bg-pink-600 hover:bg-pink-500 text-white px-6 py-3 rounded-full border-b-4 border-pink-900 shadow-lg transform active:translate-y-1 transition-all text-xl md:text-3xl uppercase tracking-wider">
-                📸 Compartir en Instagram
+                📸 COMPARTE TU PUNTUACIÓN EN INSTAGRAM
             </button>
 
             <!-- El canvas del juego -->
@@ -134,7 +133,7 @@
         </div>
     </div>
 
-    <!-- Contenedor para mensajes tipo modal (reemplazo de alert) -->
+    <!-- Contenedor para mensajes tipo modal -->
     <div id="message-box" class="fixed inset-0 bg-black bg-opacity-80 z-[100] hidden flex items-center justify-center p-4">
         <div class="bg-gray-900 border-4 border-retro-cyan p-6 rounded-xl max-w-sm w-full text-center">
             <p id="message-text" class="font-pixel text-xl md:text-2xl text-white mb-6"></p>
@@ -156,6 +155,7 @@
         
         const RUTA_IMAGEN_PERRO = 'image_836c6d.jpg'; 
         const RUTA_IMAGEN_FONDO = 'image_8436e3.png'; 
+        const RUTA_IMAGEN_SHARE = 'image_933f5e.jpg'; // Nueva imagen Cyberpunk para compartir
         
         let gameState = 'START'; 
         let score = 0;
@@ -174,6 +174,11 @@
         let isBgLoaded = false;
         bgImg.onload = () => { isBgLoaded = true; };
         bgImg.src = RUTA_IMAGEN_FONDO;
+
+        const shareApoloImg = new Image();
+        let isShareImgLoaded = false;
+        shareApoloImg.onload = () => { isShareImgLoaded = true; };
+        shareApoloImg.src = RUTA_IMAGEN_SHARE;
 
         const player = {
             x: GAME_WIDTH / 2 - DOG_SIZE / 2,
@@ -238,7 +243,7 @@
             player.x = GAME_WIDTH / 2 - player.width / 2;
             player.stunTimer = 0;
             player.speed = BASE_PLAYER_SPEED;
-            shareBtn.style.display = 'none'; // Ocultar botón de compartir al empezar
+            shareBtn.style.display = 'none'; 
         }
 
         function showMessage(text) {
@@ -250,64 +255,69 @@
             messageBox.classList.add('hidden');
         }
 
-        // Función para compartir en Instagram (Web Share API)
         async function shareToInstagram() {
             try {
-                // Crear un canvas temporal para el pantallazo (sin la UI de Game Over encima)
+                // Crear un canvas para el pantallazo con la imagen de alta calidad
                 const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = GAME_WIDTH;
-                tempCanvas.height = GAME_HEIGHT;
+                tempCanvas.width = 1024; // Resolución un poco más alta para que se vea bien
+                tempCanvas.height = 1024;
                 const tCtx = tempCanvas.getContext('2d');
 
-                // 1. Dibujar el fondo y elementos actuales (simulando captura)
-                drawEnvironmentTo(tCtx);
-                
-                // 2. Dibujar a Apolo
-                if (isApoloLoaded) {
-                    tCtx.drawImage(apoloImg, player.x, player.y, player.width, player.height);
+                // 1. Dibujar la imagen Cyberpunk como fondo
+                if (isShareImgLoaded) {
+                    // Mantener aspecto y centrar
+                    const scale = Math.max(tempCanvas.width / shareApoloImg.width, tempCanvas.height / shareApoloImg.height);
+                    const x = (tempCanvas.width / 2) - (shareApoloImg.width / 2) * scale;
+                    const y = (tempCanvas.height / 2) - (shareApoloImg.height / 2) * scale;
+                    tCtx.drawImage(shareApoloImg, x, y, shareApoloImg.width * scale, shareApoloImg.height * scale);
                 } else {
-                    tCtx.font = `${DOG_SIZE * 0.8}px sans-serif`;
-                    tCtx.textAlign = 'center';
-                    tCtx.fillText('🐶', player.x + player.width/2, player.y + player.height/2);
+                    tCtx.fillStyle = '#111827';
+                    tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
                 }
 
-                // 3. Añadir marca de agua y puntuación
-                tCtx.fillStyle = 'rgba(0,0,0,0.6)';
-                tCtx.fillRect(0, 0, GAME_WIDTH, 100);
+                // 2. Superposición para el record (Degradado inferior de neón)
+                const gradient = tCtx.createLinearGradient(0, tempCanvas.height * 0.7, 0, tempCanvas.height);
+                gradient.addColorStop(0, 'rgba(0,0,0,0)');
+                gradient.addColorStop(0.5, 'rgba(230, 57, 70, 0.7)'); // Rojo Arcade
+                gradient.addColorStop(1, 'rgba(0,0,0,0.9)');
+                tCtx.fillStyle = gradient;
+                tCtx.fillRect(0, tempCanvas.height * 0.7, tempCanvas.width, tempCanvas.height * 0.3);
                 
-                tCtx.fillStyle = '#EAB308';
-                tCtx.font = '40px "VT323"';
+                // 3. Texto del Record
+                tCtx.fillStyle = '#EAB308'; // Oro
+                tCtx.shadowColor = 'rgba(0,0,0,1)';
+                tCtx.shadowBlur = 10;
+                tCtx.font = 'bold 80px "VT323", monospace';
                 tCtx.textAlign = 'center';
-                tCtx.fillText(`¡APOLO ARCADE: ${score} PUNTOS!`, GAME_WIDTH/2, 45);
+                tCtx.fillText(`RECORD: ${score} PUNTOS`, tempCanvas.width / 2, tempCanvas.height - 130);
                 
+                // 4. Etiqueta @apolo.chilote
                 tCtx.fillStyle = '#FFFFFF';
-                tCtx.font = '30px "VT323"';
-                tCtx.fillText('Sigue a @apolo.chilote 👾', GAME_WIDTH/2, 80);
+                tCtx.font = '50px "VT323", monospace';
+                tCtx.fillText('@apolo.chilote 👾', tempCanvas.width / 2, tempCanvas.height - 60);
 
-                // 4. Convertir a Blob/Imagen
                 tempCanvas.toBlob(async (blob) => {
                     if (!blob) return;
-                    const file = new File([blob], "apolo_score.png", { type: "image/png" });
+                    const file = new File([blob], "apolo_cyber_record.png", { type: "image/png" });
                     
                     if (navigator.share) {
                         await navigator.share({
                             files: [file],
-                            title: 'Apolo Disc Dog Arcade',
-                            text: `¡Mira mi récord de ${score} puntos en Apolo Arcade! Sígueme en @apolo.chilote`
+                            title: 'Apolo Cyber Record',
+                            text: `¡Mira mi récord de ${score} puntos en Apolo Arcade! @apolo.chilote`
                         });
                     } else {
-                        // Fallback si no hay Share API (descargar imagen)
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = 'mi_record_apolo.png';
+                        a.download = 'record_apolo.png';
                         a.click();
-                        showMessage("¡Tu récord se ha descargado! Súbelo manualmente a Instagram Stories y etiqueta a @apolo.chilote");
+                        showMessage("¡Tarjeta de récord descargada! Súbela a Instagram Stories y etiqueta a @apolo.chilote");
                     }
                 });
             } catch (err) {
                 console.error(err);
-                showMessage("Ups, no se pudo abrir el menú para compartir. Prueba descargando la imagen.");
+                showMessage("Ups, no se pudo generar la tarjeta. Intenta de nuevo.");
             }
         }
 
@@ -402,10 +412,9 @@
 
         function endGame() {
             gameState = 'GAMEOVER';
-            shareBtn.style.display = 'block'; // Mostrar botón de compartir al morir
+            shareBtn.style.display = 'block'; 
         }
 
-        // Función para dibujar el entorno en cualquier contexto de canvas
         function drawEnvironmentTo(targetCtx) {
             if (isBgLoaded) {
                 targetCtx.drawImage(bgImg, 0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -482,7 +491,7 @@
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#FAFAF9';
                 ctx.font = '70px "VT323"';
-                ctx.fillText('¡SISTEMA CAÍDO!', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 80);
+                ctx.fillText('¡GAME OVER! 🕹️', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 80);
                 ctx.fillStyle = '#EAB308';
                 ctx.font = '40px "VT323"';
                 ctx.fillText(`PUNTUACIÓN FINAL: ${score}`, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 10);
