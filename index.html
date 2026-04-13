@@ -70,8 +70,8 @@
         // Constantes del juego
         const GAME_WIDTH = 800;
         const GAME_HEIGHT = 600;
-        const DOG_SIZE = 130; // Tamaño ajustado para ver mejor el pixel art
-        const ITEM_SIZE = 40;
+        const DOG_SIZE = 200; // Tamaño aumentado para que el perro sea más grande
+        const ITEM_SIZE = 70; // Tamaño de los iconos aumentado (antes 40)
         
         // --- CONFIGURACIÓN DE IMÁGENES ---
         // Nombres exactos de las imágenes que deben estar en la misma carpeta
@@ -125,7 +125,7 @@
 
         // Tipos de objetos que caen
         const itemTypes = [
-            { type: 'normal', emoji: '🛸', points: 10, prob: 0.7, speed: 4 },
+            { type: 'normal', emoji: '🥏', points: 10, prob: 0.7, speed: 4 },
             { type: 'golden', emoji: '🌟', points: 50, prob: 0.1, speed: 7 },
             { type: 'shoe',   emoji: '👞', points: -15, prob: 0.2, speed: 5 } // Penalización
         ];
@@ -388,7 +388,7 @@
                 
                 ctx.font = '24px "VT323"';
                 ctx.fillStyle = '#9CA3AF';
-                ctx.fillText('Atrapa: 🛸 (+10)  🌟 (+50)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 100);
+                ctx.fillText('Atrapa: 🥏 (+10)  🌟 (+50)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 100);
                 ctx.fillText('Esquiva: 👞 (Aturde y -15 pts)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 140);
                 ctx.fillText('Pierdes una 🦴 si un disco toca el suelo', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 180);
 
