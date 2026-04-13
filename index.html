@@ -155,7 +155,7 @@
         
         const RUTA_IMAGEN_PERRO = 'image_836c6d.jpg'; 
         const RUTA_IMAGEN_FONDO = 'image_8436e3.png'; 
-        const RUTA_IMAGEN_SHARE = 'image_933f5e.jpg'; // Nueva imagen Cyberpunk para compartir
+        const RUTA_IMAGEN_SHARE = 'image_933f5e.jpg'; 
         
         let gameState = 'START'; 
         let score = 0;
@@ -257,15 +257,12 @@
 
         async function shareToInstagram() {
             try {
-                // Crear un canvas para el pantallazo con la imagen de alta calidad
                 const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = 1024; // Resolución un poco más alta para que se vea bien
+                tempCanvas.width = 1024; 
                 tempCanvas.height = 1024;
                 const tCtx = tempCanvas.getContext('2d');
 
-                // 1. Dibujar la imagen Cyberpunk como fondo
                 if (isShareImgLoaded) {
-                    // Mantener aspecto y centrar
                     const scale = Math.max(tempCanvas.width / shareApoloImg.width, tempCanvas.height / shareApoloImg.height);
                     const x = (tempCanvas.width / 2) - (shareApoloImg.width / 2) * scale;
                     const y = (tempCanvas.height / 2) - (shareApoloImg.height / 2) * scale;
@@ -275,26 +272,25 @@
                     tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
                 }
 
-                // 2. Superposición para el record (Degradado inferior de neón)
-                const gradient = tCtx.createLinearGradient(0, tempCanvas.height * 0.7, 0, tempCanvas.height);
-                gradient.addColorStop(0, 'rgba(0,0,0,0)');
+                // --- MODIFICADO: Escritura en la parte superior ---
+                const gradient = tCtx.createLinearGradient(0, 0, 0, 350);
+                gradient.addColorStop(0, 'rgba(0,0,0,0.9)');
                 gradient.addColorStop(0.5, 'rgba(230, 57, 70, 0.7)'); // Rojo Arcade
-                gradient.addColorStop(1, 'rgba(0,0,0,0.9)');
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
                 tCtx.fillStyle = gradient;
-                tCtx.fillRect(0, tempCanvas.height * 0.7, tempCanvas.width, tempCanvas.height * 0.3);
+                tCtx.fillRect(0, 0, tempCanvas.width, 350);
                 
-                // 3. Texto del Record
-                tCtx.fillStyle = '#EAB308'; // Oro
+                tCtx.fillStyle = '#EAB308'; 
                 tCtx.shadowColor = 'rgba(0,0,0,1)';
                 tCtx.shadowBlur = 10;
                 tCtx.font = 'bold 80px "VT323", monospace';
                 tCtx.textAlign = 'center';
-                tCtx.fillText(`RECORD: ${score} PUNTOS`, tempCanvas.width / 2, tempCanvas.height - 130);
+                tCtx.fillText(`RECORD: ${score} PUNTOS`, tempCanvas.width / 2, 130);
                 
-                // 4. Etiqueta @apolo.chilote
                 tCtx.fillStyle = '#FFFFFF';
                 tCtx.font = '50px "VT323", monospace';
-                tCtx.fillText('@apolo.chilote 👾', tempCanvas.width / 2, tempCanvas.height - 60);
+                tCtx.fillText('@apolo.chilote 👾', tempCanvas.width / 2, 210);
+                // --------------------------------------------------
 
                 tempCanvas.toBlob(async (blob) => {
                     if (!blob) return;
@@ -312,7 +308,7 @@
                         a.href = url;
                         a.download = 'record_apolo.png';
                         a.click();
-                        showMessage("¡Tarjeta de récord descargada! Súbela a Instagram Stories y etiqueta a @apolo.chilote");
+                        showMessage("¡Tarjeta de récord descargada! Súbelo a Instagram Stories y etiqueta a @apolo.chilote");
                     }
                 });
             } catch (err) {
@@ -359,7 +355,7 @@
                 rect1.x + margin < rect2.x + rect2.width - margin &&
                 rect1.x + rect1.width - margin > rect2.x + margin &&
                 rect1.y + margin < rect2.y + rect2.height - margin &&
-                rect1.y + rect1.height - margin > rect2.y + margin
+                rect1.y + rect1.height - margin > rect2.y
             );
         }
 
