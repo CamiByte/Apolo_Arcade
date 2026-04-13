@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Apolo: Arcade Clásico</title>
+    <title>Apolo Disc Dog Arcade 👾</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <script>
@@ -49,8 +49,8 @@
 <body class="antialiased flex flex-col items-center justify-center min-h-screen p-4 selection:bg-retro-gold">
 
     <div class="text-center mb-4">
-        <h1 class="font-pixel text-4xl md:text-6xl text-retro-dark uppercase tracking-widest drop-shadow-md">Apolo Arcade</h1>
-        <p class="font-pixel text-xl text-gray-600">¡Atrapa los discos, esquiva los zapatos!</p>
+        <h1 class="font-pixel text-4xl md:text-6xl text-retro-dark uppercase tracking-widest drop-shadow-md">APOLO DISC DOG ARCADE 👾</h1>
+        <p class="font-pixel text-xl text-gray-600">¡Atrapa los discos, esquiva las abejas!</p>
     </div>
 
     <div id="game-container" class="shadow-pixel bg-retro-dark p-2 md:p-4 rounded-sm">
@@ -127,7 +127,7 @@
         const itemTypes = [
             { type: 'normal', emoji: '🥏', points: 10, prob: 0.7, speed: 4 },
             { type: 'golden', emoji: '🌟', points: 50, prob: 0.1, speed: 7 },
-            { type: 'shoe',   emoji: '👞', points: -15, prob: 0.2, speed: 5 } // Penalización
+            { type: 'bee',   emoji: '🐝', points: -15, prob: 0.2, speed: 5 } // Penalización
         ];
 
         // Controles
@@ -263,7 +263,7 @@
 
                 // Colisión con Apolo
                 if (checkCollision(player, item)) {
-                    if (item.type === 'shoe') {
+                    if (item.type === 'bee') {
                         player.stunTimer = 60; // Aturdido 1 segundo (a 60fps)
                         score += item.points; // Resta puntos
                     } else {
@@ -275,8 +275,8 @@
 
                 // Si el ítem cae al suelo
                 if (item.y > GAME_HEIGHT) {
-                    // Si era un disco (no un zapato), pierdes una vida
-                    if (item.type !== 'shoe') {
+                    // Si era un disco (no una abeja), pierdes una vida
+                    if (item.type !== 'bee') {
                         lives--;
                         if (lives <= 0) {
                             gameState = 'GAMEOVER';
@@ -377,7 +377,7 @@
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#EAB308';
                 ctx.font = '60px "VT323"';
-                ctx.fillText('APOLO ARCADE', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50);
+                ctx.fillText('APOLO DISC DOG ARCADE 👾', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50);
 
                 ctx.fillStyle = '#FAFAF9';
                 ctx.font = '30px "VT323"';
@@ -389,7 +389,7 @@
                 ctx.font = '24px "VT323"';
                 ctx.fillStyle = '#9CA3AF';
                 ctx.fillText('Atrapa: 🥏 (+10)  🌟 (+50)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 100);
-                ctx.fillText('Esquiva: 👞 (Aturde y -15 pts)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 140);
+                ctx.fillText('Esquiva: 🐝 (Aturde y -15 pts)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 140);
                 ctx.fillText('Pierdes una 🦴 si un disco toca el suelo', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 180);
 
             } else if (gameState === 'GAMEOVER') {
