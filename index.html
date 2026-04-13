@@ -331,6 +331,10 @@
                     if (item.type === 'bee') {
                         player.stunTimer = 60; // Aturdido 1 segundo (a 60fps)
                         score += item.points; // Resta puntos
+                        lives--; // NUEVO: Pierde una vida
+                        if (lives <= 0) {
+                            gameState = 'GAMEOVER';
+                        }
                     } else {
                         score += item.points;
                     }
@@ -454,7 +458,7 @@
                 ctx.font = '24px "VT323"';
                 ctx.fillStyle = '#9CA3AF';
                 ctx.fillText('Atrapa: 🥏 (+10)  🌟 (+50)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 100);
-                ctx.fillText('Esquiva: 🐝 (Aturde y -15 pts)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 140);
+                ctx.fillText('Esquiva: 🐝 (Pierdes 1 🦴 y -15 pts)', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 140);
                 ctx.fillText('Pierdes una 🦴 si un disco toca el suelo', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 180);
 
             } else if (gameState === 'GAMEOVER') {
